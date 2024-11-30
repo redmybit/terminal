@@ -12,6 +12,8 @@ TERMINAL_FONT = pygame.font.Font(font_name, TERMINAL_FONT_SIZE)
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
+running = True
+
 pygame.display.set_caption("Terminal")
 
 def draw_text(screen, text, font, color, position, center=False):
@@ -34,12 +36,23 @@ def put_line(text, offset, underline = False):
     draw_text(screen, updated_text, TERMINAL_FONT, (255, 255, 255), (0, offset))
     return offset + TERMINAL_FONT_SIZE
 
-def putf_line(text):
+def putf_line(text, console=False):
     lines.append(text)
 
 def clear_terminal():
     global lines
     lines = []
+
+def exit_terminal():
+    global running
+    running = False
+
+def get_last_line():
+    return lines[len(lines) - 2] # -2 so that the current line is not counted
+
+def set_message(string):
+    global message
+    message = string
 
 # useful variables
 lines = []
@@ -62,6 +75,19 @@ class Stack:
     def add(self, variable):
         self.memory.append(variable)
         return len(self.memory) - 1
+    
+    def update(self, name, new_value):
+        names = []
+        for variable in self.memory:
+            names.append(variable.name)
+        
+        if name in names:
+            index = names.index(name)
+            self.memory[index] = Variable(name, new_value, index)
+            return index
+        else: 
+            putf_line("variable not defined")
+            return None
     
     def geti(self, index):
         if index > len(self.memory):
@@ -97,13 +123,18 @@ class Command:
     
     def execute(self, context, index):
         global stack
+        
         eval(self.command)
 
 # list of commands
 commands = [
-    Command("echo", "putf_line(str(context[index + 1]))", 1), # prints the next token
-    Command("var", "putf_line(str(stack.add(Variable(context[index + 1],context[index + 2],stack.gets()))))", 2), # creates a new variable
-    Command("clear", "clear_terminal()", 0), # clears the console
+    Command("echo", "putf_line(str(context[index + 1]),True)", 1), # prints the next token
+    Command("var", "putf_line(str(context[index + 1])+' at '+str(stack.add(Variable(context[index + 1],context[index + 2],stack.gets()))),True)", 2), # creates a new variable
+    Command("clear", "clear_terminal()"), # clears the console
+    Command("exit", "exit_terminal()"), # exits the terminal
+    Command("run", "execute_command(str(context[index + 1]))", 1), # runs a give command
+    Command("upd", "putf_line(str(stack.update(context[index + 1],context[index + 2])))"), # updates a variable
+    Command("output", "set_message(get_last_line())"), # gets the previous line in the console
 ]
 
 # function to execute commands
@@ -117,17 +148,40 @@ def execute_command(command : str):
     tokens = command.split(" ")
     formatted_tokens = []
     
+    def on_string():
+        global error
+        
+        # set the token to be a string
+        next = ""
+        index = 0
+        final = ""
+        while next != ";":
+            index += 1
+            next = tokens[token[0] + index]
+            
+            # catch errors
+            if index + token[0] + 1 > len(tokens):
+                # throw an error
+                putf_line("';' not found")
+                error = True
+                return ""
+            
+            final += " " + next
+        
+        # format the string (remove the unneccessary semi-colon and spaces)
+        final = final[:-2]
+        final = final[1:]
+        
+        return final
+
     # variable to keep track of how many tokens to skip
     skipping = 0
     
     # format the tokens (for variables)
     for token in enumerate(tokens):
         
-        # account for errors
-        if error:
-            break
-        
-        # account for skipped tokens
+        # account for errors and skipped tokens
+        if error: break
         if skipping > 0:
             skipping -= 1
             continue
@@ -158,20 +212,42 @@ def execute_command(command : str):
     # format the tokens (for integers)
     for token in enumerate(tokens):
         
-        # account for errors
-        if error:
-            break
-        
-        # account for skipped tokens
+        # account for errors and skipped tokens
+        if error: break
         if skipping > 0:
             skipping -= 1
             continue
         
         new_token = token[1]
         
-        # check if the token is get
+        # check if the token is integer
         if token[1] == "integer":
             new_token = int(tokens[token[0] + 1])
+            skipping += 1
+        
+        # add the new token to the formatted string
+        formatted_tokens.append(new_token)
+    
+    tokens = formatted_tokens.copy()
+    formatted_tokens = []
+    
+    # reset skipping to 0
+    skipping = 0
+    
+    # format the tokens (for floats)
+    for token in enumerate(tokens):
+        
+        # account for errors and skipped tokens
+        if error: break
+        if skipping > 0:
+            skipping -= 1
+            continue
+        
+        new_token = token[1]
+        
+        # check if the token is float
+        if token[1] == "float":
+            new_token = float(tokens[token[0] + 1])
             skipping += 1
         
         # add the new token to the formatted string
@@ -186,11 +262,8 @@ def execute_command(command : str):
     # format the tokens (for strings)
     for token in enumerate(tokens):
         
-        # account for errors
-        if error:
-            break
-        
-        # account for skipped tokens
+        # account for errors and skipped tokens
+        if error: break
         if skipping > 0:
             skipping -= 1
             continue
@@ -199,35 +272,13 @@ def execute_command(command : str):
         
         # check if the token is string
         if token[1] == "string":
-            new_token = ""
-            
-            # set the token to be a string
-            next = ""
-            index = 0
-            final = ""
-            while next != ";":
-                index += 1
-                next = tokens[token[0] + index]
-                
-                # catch errors
-                if index + token[0] > len(tokens) - 1:
-                    
-                    # throw an error
-                    putf_line("syntax error")
-                    error = True
-                    break
-                
-                final += " " + next
-            
-            # format the string (remove the unneccessary semi-colon and spaces)
-            final = final[:-2]
-            final = final[1:]
             
             # set the new token to be the final string
-            new_token = final
+            new_token = on_string()
             
-            # skip over the next values
-            skipping += len(final)
+            if new_token != "":
+                # skip over the next values
+                skipping += len(new_token)
         
         # add the new token to the formatted string
         formatted_tokens.append(new_token)
@@ -240,19 +291,28 @@ def execute_command(command : str):
     
     # parse through the tokens
     for token in enumerate(tokens):
-        if error:
-            break
-        
-        # account for skipped tokens
+        # account for errors and skipped tokens
+        if error: break
         if skipping > 0:
             skipping -= 1
             continue
         
+        # tracks if the token is valid
+        valid = False
+        
         # check if the token is a valid command and if it is execute the command
         for checking in commands:
             if token[1] == checking.name:
+                valid = True
                 checking.execute(formatted_tokens, token[0])
                 skipping += checking.skip
+        
+        # handle invalid tokens
+        if not valid:
+            # throw an error because the value / function is not defined
+            putf_line("~und.")
+            error = True
+            break
 
 # main function
 def main():
@@ -278,7 +338,6 @@ def main():
     frames += 1
     
 # main loop
-running = True
 while running:
     
     # poll for events
