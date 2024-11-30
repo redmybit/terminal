@@ -1,2 +1,2 @@
 # terminal
-terminal coding in python
+terminal coded in python using the pygame library
