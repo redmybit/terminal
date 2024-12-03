@@ -30,9 +30,9 @@ TERMINAL_FONT = pygame.font.Font(font_name, TERMINAL_FONT_SIZE)
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
-running = True
-
 pygame.display.set_caption("Terminal")
+
+running = True
 
 # functions for drawing text onto the screen
 def draw_colored_text(screen, font, word_color_pairs, position, underline=False):
@@ -237,20 +237,20 @@ functions = [
 ]
 
 # programs
-update_path("main\\os") # update the path to be in the os directory
+update_path("main") # make sure the path is in the main directoy
 
-STRING = Program("string", load_module("os_string"))
-GET = Program("get", load_module("os_get"))
-INTEGER = Program("integer", load_module("os_integer"))
-FLOAT = Program("float", load_module("os_float"))
-
-update_path("main") # reset the path to be back in the main directory
+STRING = Program("string", load_module("os\\os_string"))
+GET = Program("get", load_module("os\\os_get"))
+INTEGER = Program("integer", load_module("os\\os_integer"))
+FLOAT = Program("float", load_module("os\\os_float"))
+EVAL = Program("eval", load_module("os\\os_eval"))
 
 # list of all the programs NOTE: ORDER IS IMPORTANT
 programs = [
     GET, # gets variables
     INTEGER, # integer data type
     FLOAT, # float data type
+    EVAL, # evalutates expressions
     STRING, # handles the string data type
 ]
 
