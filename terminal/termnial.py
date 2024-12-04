@@ -6,7 +6,7 @@ pygame.init()
 
 WIDTH, HEIGHT = (500, 500)
 FPS = 60
-PATH = "main"
+PATH = "terminal\\main"
 
 # functions for loading modules from a path and updating them
 def update_path(new_path):
@@ -15,7 +15,7 @@ def update_path(new_path):
 
 def load_module(name : str):
     # Load the module
-    spec = util.spec_from_file_location(name, PATH + "\\" + name)
+    spec = util.spec_from_file_location(name, PATH + "\\" + name + ".py")
     module = util.module_from_spec(spec)
     spec.loader.exec_module(module)
     
@@ -176,7 +176,8 @@ class Stack:
 stack = Stack()
 
 # function that can be executed
-class Function:
+"""
+class Push_Program:
     def __init__(self, name, skip=0) -> None:
         self.name = name
         self.lines = []
@@ -194,6 +195,7 @@ class Function:
         
         for line in self.lines:
             eval(line)
+"""
 
 # program
 class Program:
@@ -205,39 +207,39 @@ class Program:
         return self.program_object.execute(tokens, token, stack)
 
 # functions
-ECHO = Function("echo", 1) # prints a value to the terminal
-ECHO.new_line("putf_line(str(token_of(context, index, 1)))")
+ECHO = Program("echo", load_module("os_echo")) # prints a value to the terminal
+#ECHO.new_line("putf_line(str(token_of(context, index, 1)))")
 
-VAR = Function("var", 2) # creates a new variable with a given name and value
-VAR.new_line("putf_line(str(token_of(context, index, 1) + ' at ' + str(stack.add(Variable(token_of(context, index, 1), token_of(context, index, 2), stack.gets())))))")
+#VAR = Program("var", 2) # creates a new variable with a given name and value
+#VAR.new_line("putf_line(str(token_of(context, index, 1) + ' at ' + str(stack.add(Variable(token_of(context, index, 1), token_of(context, index, 2), stack.gets())))))")
 
-CLEAR = Function("clear") # clears the terminal
-CLEAR.new_line("clear_terminal()")
+#CLEAR = Program("clear") # clears the terminal
+#CLEAR.new_line("clear_terminal()")
 
-EXIT = Function("exit") # exits the terminal
-EXIT.new_line("exit_terminal()")
+#EXIT = Program("exit") # exits the terminal
+#EXIT.new_line("exit_terminal()")
 
-RUN = Function("run", 1) # runs a program
-RUN.new_line("execute_command(str(token_of(context, index, 1)))")
+#RUN = Program("run", 1) # runs a program
+#RUN.new_line("execute_command(str(token_of(context, index, 1)))")
 
-UPD = Function("upd", 2) # updates a given variable with a new value
-UPD.new_line("putf_line(str(stack.update(token_of(context, index, 1), token_of(context, index, 2))))")
+#UPD = Program("upd", 2) # updates a given variable with a new value
+#UPD.new_line("putf_line(str(stack.update(token_of(context, index, 1), token_of(context, index, 2))))")
 
-COPY = Function("copy") # sets the message to the previous command
-COPY.new_line("set_message(get_last_line())")
+#COPY = Program("copy") # sets the message to the previous command
+#COPY.new_line("set_message(get_last_line())")
 
 # list used for easy access
-functions = [
+push_programs = [
     ECHO,
-    VAR,
-    CLEAR,
-    EXIT,
-    RUN,
-    UPD,
+    #VAR,
+    #CLEAR,
+    #EXIT,
+    #RUN,
+    #UPD,
 ]
 
 # programs
-update_path("main\\os") # make sure the path is in the main\\os directoy when loading modules
+update_path("terminal\\main\\os") # make sure the path is in the main\\os directoy when loading modules
 
 STRING = Program("string", load_module("os_string"))
 GET = Program("get", load_module("os_get"))
@@ -245,10 +247,10 @@ INTEGER = Program("integer", load_module("os_integer"))
 FLOAT = Program("float", load_module("os_float"))
 EVAL = Program("eval", load_module("os_eval"))
 
-update_path("main") # correct the path back to main
+update_path("terminal\\main") # correct the path back to main
 
 # list of all the programs NOTE: ORDER IS IMPORTANT
-programs = [
+repl_programs = [
     GET, # gets variables
     INTEGER, # integer data type
     FLOAT, # float data type
@@ -264,7 +266,7 @@ def execute_command(command : str):
     tokens = command.split(" ")
     formatted_tokens = []
     
-    for program in programs:
+    for program in repl_programs:
         
         # variable to keep track of how many tokens to skip
         skipping = 0
@@ -281,17 +283,22 @@ def execute_command(command : str):
             new_token = token[1]
             
             if token[1] == program.name:
-                new_token, skip, error_message = program.execute(tokens, token, stack)
+                new_token, skip, error_message, console_output = program.execute(tokens, token, stack)
                 
                 if error_message is not None:
                     putf_line(error_message)
                     error = True
                 
+                if console_output is not None:
+                    put_line(console_output)
+                
                 # account for skipping
-                skipping += skip
+                if skip is not None:
+                    skipping += skip
             
             # add the new token to the formatted string
-            formatted_tokens.append(new_token)
+            if new_token is not None:
+                formatted_tokens.append(new_token)
         
         tokens = formatted_tokens.copy()
         formatted_tokens = []
@@ -316,7 +323,7 @@ def execute_command(command : str):
         valid = False
         
         # check if the token is a valid command and if it is execute the command
-        for function in functions:
+        for function in push_programs:
             if token[1] == function.name:
                 valid = True
                 function.execute(tokens, token[0])
@@ -340,11 +347,11 @@ def color_message(message : str):
     for token in tokens:
         color = (255, 255, 255) # default to white
         
-        for program in programs:
+        for program in repl_programs:
             if token == program.name:
                 color = (230, 79, 48) # redish magenta
         
-        for function in functions:
+        for function in push_programs:
             if token == function.name:
                 color = (39, 152, 152) # dark aqua
         

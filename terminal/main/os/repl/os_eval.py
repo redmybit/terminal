@@ -1,5 +1,6 @@
 def execute(tokens, token, stack):
     error = None
+    console_output = None
     
     operation = tokens[token[0] + 1]
     inputs = []
@@ -35,4 +36,4 @@ def execute(tokens, token, stack):
     
     skip = len(inputs) + 1 # eval has a skip of inputs (+1 to account for the semi-colon)
     
-    return new_token, skip, error
+    return new_token, skip, error, console_output
