@@ -15,7 +15,7 @@ def update_path(new_path):
 
 def load_module(name : str):
     # Load the module
-    spec = util.spec_from_file_location(name, PATH + "\\" + name + ".py")
+    spec = util.spec_from_file_location(name, PATH + "\\" + name)
     module = util.module_from_spec(spec)
     spec.loader.exec_module(module)
     
@@ -237,13 +237,15 @@ functions = [
 ]
 
 # programs
-update_path("main") # make sure the path is in the main directoy
+update_path("main\\os") # make sure the path is in the main\\os directoy when loading modules
 
-STRING = Program("string", load_module("os\\os_string"))
-GET = Program("get", load_module("os\\os_get"))
-INTEGER = Program("integer", load_module("os\\os_integer"))
-FLOAT = Program("float", load_module("os\\os_float"))
-EVAL = Program("eval", load_module("os\\os_eval"))
+STRING = Program("string", load_module("os_string"))
+GET = Program("get", load_module("os_get"))
+INTEGER = Program("integer", load_module("os_integer"))
+FLOAT = Program("float", load_module("os_float"))
+EVAL = Program("eval", load_module("os_eval"))
+
+update_path("main") # correct the path back to main
 
 # list of all the programs NOTE: ORDER IS IMPORTANT
 programs = [
