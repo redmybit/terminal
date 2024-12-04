@@ -256,6 +256,47 @@ def execute_command(command : str):
     tokens = command.split(" ")
     formatted_tokens = []
     
+    # flip the tokens list to be backwards
+    tokens.reverse()
+    
+    # parse the flipped tokens
+    for token in enumerate(tokens):
+        
+        # variable to keep track of how many tokens to skip
+        skipping = 0
+        
+        # account for errors and skipped tokens
+        if error: 
+            break
+        
+        if skipping > 0:
+            skipping -= 1
+            continue
+        
+        # value that the token is to be replaced by
+        new_token = token[1]
+        
+        # loop through the programs
+        for program in programs:
+            
+            # check if the token is a valid program
+            if token[1] == program.name:
+                
+                # if so execute the program
+                new_token, skip, error_message, console_output = program.execute(tokens, token, stack)
+                
+                # account for error messages, console_output and skipping
+                if error_message is not None:
+                    putf_line(error_message)
+                    error = True
+                
+                if console_output is not None:
+                    putf_line(console_output)
+                
+                if skip is not None:
+                    skipping += skip
+                
+    
     for program in programs:
         
         # variable to keep track of how many tokens to skip
