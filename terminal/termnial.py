@@ -261,31 +261,35 @@ def execute_command(command : str):
     
     # parse the flipped tokens
     for token in enumerate(tokens):
+        print(token)
         
-        # variable to keep track of how many tokens to skip
-        skipping = 0
-        
-        # account for errors and skipped tokens
+        # account for errors
         if error: 
             break
-        
-        if skipping > 0:
-            skipping -= 1
-            continue
         
         # value that the token is to be replaced by
         new_token = token[1]
         
+        # keeps track of valid tokens
+        valid = False
+        
+        # keeps track of the reversed token index
+        token_index = len(tokens) - 1
+        
         # loop through the programs
         for program in programs:
             
+            # break out of the program if the token has already been parsed
+            if valid:
+                break
+            
             # check if the token is a valid program
             if token[1] == program.name:
+
+                # if so execute the program, NOTE remember to reverse the tokens back to inital form when processing functions
+                new_token, skip, error_message, console_output = program.execute(tokens.reverse(), token_index, stack)
                 
-                # if so execute the program
-                new_token, skip, error_message, console_output = program.execute(tokens, token, stack)
-                
-                # account for error messages, console_output and skipping
+                # account for error messages and console_output
                 if error_message is not None:
                     putf_line(error_message)
                     error = True
@@ -293,10 +297,26 @@ def execute_command(command : str):
                 if console_output is not None:
                     putf_line(console_output)
                 
-                if skip is not None:
-                    skipping += skip
+                # NOTE because the parser parses right to left skipping is useless
                 
+            # break out of the loop if the token is defined
+            if new_token is not None:
+                valid = True
+            
+            # decrement the token index
+            token_index -= 1
+        
+        # if the token is valid add it to the formatted tokens list
+        if valid:
+            formatted_tokens.append(new_token)
     
+    # update the tokens to be formatted
+    tokens = formatted_tokens.copy()
+    tokens.reverse() # make sure to reverse them back to inital form
+    
+    print(tokens) # debug
+    
+    """
     for program in programs:
         
         # variable to keep track of how many tokens to skip
@@ -338,6 +358,9 @@ def execute_command(command : str):
         skipping = 0
     
     print(tokens) # debug
+    """
+    
+    
     
     """
     # reset skipping to 0
