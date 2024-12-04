@@ -206,7 +206,9 @@ class Program:
     def execute(self, tokens, token, stack):
         return self.program_object.execute(tokens, token, stack)
 
-# functions
+# programs
+update_path("terminal\\main\\os") # make sure the path is in the main\\os directoy when loading modules
+
 ECHO = Program("echo", load_module("os_echo")) # prints a value to the terminal
 #ECHO.new_line("putf_line(str(token_of(context, index, 1)))")
 
@@ -228,19 +230,6 @@ ECHO = Program("echo", load_module("os_echo")) # prints a value to the terminal
 #COPY = Program("copy") # sets the message to the previous command
 #COPY.new_line("set_message(get_last_line())")
 
-# list used for easy access
-push_programs = [
-    ECHO,
-    #VAR,
-    #CLEAR,
-    #EXIT,
-    #RUN,
-    #UPD,
-]
-
-# programs
-update_path("terminal\\main\\os") # make sure the path is in the main\\os directoy when loading modules
-
 STRING = Program("string", load_module("os_string"))
 GET = Program("get", load_module("os_get"))
 INTEGER = Program("integer", load_module("os_integer"))
@@ -250,12 +239,13 @@ EVAL = Program("eval", load_module("os_eval"))
 update_path("terminal\\main") # correct the path back to main
 
 # list of all the programs NOTE: ORDER IS IMPORTANT
-repl_programs = [
+programs = [
     GET, # gets variables
     INTEGER, # integer data type
     FLOAT, # float data type
     EVAL, # evalutates expressions
     STRING, # handles the string data type
+    ECHO,
 ]
 
 # function to execute commands
@@ -266,7 +256,7 @@ def execute_command(command : str):
     tokens = command.split(" ")
     formatted_tokens = []
     
-    for program in repl_programs:
+    for program in programs:
         
         # variable to keep track of how many tokens to skip
         skipping = 0
@@ -290,7 +280,7 @@ def execute_command(command : str):
                     error = True
                 
                 if console_output is not None:
-                    put_line(console_output)
+                    putf_line(console_output)
                 
                 # account for skipping
                 if skip is not None:
@@ -308,6 +298,7 @@ def execute_command(command : str):
     
     print(tokens) # debug
     
+    """
     # reset skipping to 0
     skipping = 0
     
@@ -323,7 +314,7 @@ def execute_command(command : str):
         valid = False
         
         # check if the token is a valid command and if it is execute the command
-        for function in push_programs:
+        for function in programs:
             if token[1] == function.name:
                 valid = True
                 function.execute(tokens, token[0])
@@ -335,6 +326,7 @@ def execute_command(command : str):
             putf_line("~und.")
             error = True
             break
+    """
 
 def color_message(message : str):
     # split the message into tokens
@@ -347,13 +339,15 @@ def color_message(message : str):
     for token in tokens:
         color = (255, 255, 255) # default to white
         
-        for program in repl_programs:
+        for program in programs:
             if token == program.name:
                 color = (230, 79, 48) # redish magenta
         
+        """
         for function in push_programs:
             if token == function.name:
                 color = (39, 152, 152) # dark aqua
+        """
         
         if token == ";":
             color = (127, 127, 127) # medium gray
