@@ -2,6 +2,7 @@ def execute(tokens, token, stack):
     new_token = 0
     skip = 0
     error = None
+    soft_error = None
     console_output = None
     
     # set the token to be a string
@@ -21,4 +22,4 @@ def execute(tokens, token, stack):
     
     skip = index # not index - 1 because of the sneaky semi-colon
     
-    return new_token, skip, error, console_output
+    return new_token, skip, error, soft_error, console_output

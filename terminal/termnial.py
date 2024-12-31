@@ -1,12 +1,50 @@
 import pygame
 import importlib.util as util
+import copy
+
+# abbreviations guide:
+
+# PARSER
+# PFE: Parser found error
+# PFSE: Parser found soft error
+# PTP: Parser terminated program
+# PS: Parser summary
+# PPPS: Parser post program summary
+
+# STACK
+# SFE: Stack found error
+# SFSE: Stack found soft error
+
+# parser class
+class Parser:
+    def __init__(self) -> None:
+        self.keywords = [
+            "PFE",
+            "PFSE",
+            "PTP",
+            "PS",
+            "PPPS"
+        ]
+        
+        self.colorkey = [
+            (255, 0, 0),
+            (255, 0, 0),
+            (76, 197, 170),
+            (76, 197, 170),
+            (76, 197, 170)
+        ]
+
+# general parser
+parser = Parser()
 
 # initilize pygame
 pygame.init()
 
+# global variables
 WIDTH, HEIGHT = (500, 500)
 FPS = 60
 PATH = "terminal\\main"
+DEBUG = True # debug mode for the console
 
 # functions for loading modules from a path and updating them
 def update_path(new_path):
@@ -147,12 +185,12 @@ class Stack:
             self.memory[index] = Variable(name, new_value, index)
             return index
         else: 
-            putf_line("variable not defined")
+            putf_line("SFE: variable not defined")
             return None
     
     def geti(self, index):
         if index > len(self.memory):
-            putf_line("index out of range")
+            putf_line("SFE: index out of range")
             return None
 
         return self.memory[index]
@@ -165,7 +203,7 @@ class Stack:
         if name in names:
             return self.geti(names.index(name))
         else: 
-            putf_line("variable not defined")
+            putf_line("SFE: variable not defined")
             return None
     
     def gets(self):
@@ -174,28 +212,6 @@ class Stack:
 
 # main stack
 stack = Stack()
-
-# function that can be executed
-"""
-class Push_Program:
-    def __init__(self, name, skip=0) -> None:
-        self.name = name
-        self.lines = []
-        self.skip = skip
-    
-    def new_line(self, line):
-        self.lines.append(line)
-        return len(self.lines) - 1
-    
-    def del_line(self, index):
-        del self.lines[index]
-    
-    def execute(self, context, index):
-        global stack
-        
-        for line in self.lines:
-            eval(line)
-"""
 
 # program
 class Program:
@@ -250,148 +266,153 @@ programs = [
 
 # function to execute commands
 def execute_command(command : str):
+    
+    # self explanatory
+    total_errors = 0
     error = False
     
     # split the command into tokens
     tokens = command.split(" ")
-    formatted_tokens = []
     
     # flip the tokens list to be backwards
-    tokens.reverse()
+    reversed_tokens = tokens.copy()
+    reversed_tokens.reverse()
     
-    # parse the flipped tokens
-    for token in enumerate(tokens):
-        print(token)
-        
-        # account for errors
-        if error: 
-            break
-        
-        # value that the token is to be replaced by
-        new_token = token[1]
-        
-        # keeps track of valid tokens
-        valid = False
-        
-        # keeps track of the reversed token index
-        token_index = len(tokens) - 1
-        
-        # loop through the programs
-        for program in programs:
-            
-            # break out of the program if the token has already been parsed
-            if valid:
-                break
-            
-            # check if the token is a valid program
-            if token[1] == program.name:
-
-                # if so execute the program, NOTE remember to reverse the tokens back to inital form when processing functions
-                new_token, skip, error_message, console_output = program.execute(tokens.reverse(), token_index, stack)
-                
-                # account for error messages and console_output
-                if error_message is not None:
-                    putf_line(error_message)
-                    error = True
-                
-                if console_output is not None:
-                    putf_line(console_output)
-                
-                # NOTE because the parser parses right to left skipping is useless
-                
-            # break out of the loop if the token is defined
-            if new_token is not None:
-                valid = True
-            
-            # decrement the token index
-            token_index -= 1
-        
-        # if the token is valid add it to the formatted tokens list
-        if valid:
-            formatted_tokens.append(new_token)
+    # formated tokens list
+    formatted_tokens = []
     
-    # update the tokens to be formatted
-    tokens = formatted_tokens.copy()
-    tokens.reverse() # make sure to reverse them back to inital form
+    # keeps track of if the loop should reset or terminate
+    processing = True
     
-    print(tokens) # debug
+    # keeps track of how many iterations the loop had to go through
+    iterations = 0
     
-    """
-    for program in programs:
+    # main processing loop
+    while processing and (error == False):
         
-        # variable to keep track of how many tokens to skip
-        skipping = 0
+        # flip the tokens list to be backwards
+        reversed_tokens = tokens.copy()
+        reversed_tokens.reverse()
         
-        # format the tokens (for variables)
-        for token in enumerate(tokens):
-            
-            # account for errors and skipped tokens
-            if error: break
-            if skipping > 0:
-                skipping -= 1
-                continue
-            
-            new_token = token[1]
-            
-            if token[1] == program.name:
-                new_token, skip, error_message, console_output = program.execute(tokens, token, stack)
-                
-                if error_message is not None:
-                    putf_line(error_message)
-                    error = True
-                
-                if console_output is not None:
-                    putf_line(console_output)
-                
-                # account for skipping
-                if skip is not None:
-                    skipping += skip
-            
-            # add the new token to the formatted string
-            if new_token is not None:
-                formatted_tokens.append(new_token)
-        
-        tokens = formatted_tokens.copy()
+        # formatted lists
         formatted_tokens = []
         
-        # reset skipping to 0
-        skipping = 0
-    
-    print(tokens) # debug
-    """
-    
-    
-    
-    """
-    # reset skipping to 0
-    skipping = 0
-    
-    # parse through the tokens
-    for token in enumerate(tokens):
-        # account for errors and skipped tokens
-        if error: break
-        if skipping > 0:
-            skipping -= 1
-            continue
+        # reset the processing variable
+        processing = False
         
-        # tracks if the token is valid
-        valid = False
+        # summary of changes
+        summary = "Parser summary: none"
         
-        # check if the token is a valid command and if it is execute the command
-        for function in programs:
-            if token[1] == function.name:
-                valid = True
-                function.execute(tokens, token[0])
-                skipping += function.skip
+        # debug
+        print("tokens: " + str(tokens))
         
-        # handle invalid tokens
-        if not valid:
-            # throw an error because the value / function is not defined
-            putf_line("~und.")
-            error = True
-            break
-    """
+        # loop through the flipped tokens
+        for reversed_token in enumerate(reversed_tokens):
+            
+            # skip if a program has been found
+            if processing:
+                
+                # add the token to the formatted tokens (at the front to preserve the order)
+                formatted_tokens.insert(0, reversed_token[1])
+                
+                # skip the program check
+                continue
+            
+            # debug
+            # print(str(reversed_token[0]) + ": " + str(reversed_token[1]))
+            
+            using_token = reversed_token[1]
 
+            # check if the token is a keyword
+            for program in programs:
+                
+                # check if the token is recognized
+                if reversed_token[1] == program.name:
+                    
+                    # program was found so update the loop the reset again
+                    processing = True
+                    
+                    # get the original token index
+                    token_index = len(tokens) - reversed_token[0] - 1
+                    
+                    # define a token to be passed as a parameter
+                    token = [token_index, reversed_token[1]]
+                    print(">>>>>>>> tokens " + str(tokens))
+                    print(">>>>>>>> token " + str(token))
+                    
+                    # execute the program
+                    new_token, skip, error_message, soft_error_message, console_output = program.execute(tokens, token, stack)
+                    
+                    # account for errors
+                    if error_message is not None:
+                        putf_line("PFE: " + error_message)
+                        error = True
+                        
+                        # update error count
+                        total_errors += 1
+                    
+                    if soft_error_message is not None:
+                        putf_line("PFSE: " + soft_error_message)
+                        
+                        # update error count
+                        total_errors += 1
+                    
+                    # account for any console messages
+                    if console_output is not None:
+                        putf_line(console_output)
+            
+                    # update the parser summary and add the update the formatted tokens list
+                    if new_token is not None:
+                        summary = "PS: " + str(token[1]) + " => " + str(new_token)
+                        using_token = new_token
+                    
+                    # break on errors
+                    if error: break
+                if error: break
+            if error: break
+            
+            # add the token to the end of the code
+            if (processing == False) and (using_token is not None): formatted_tokens.append(using_token)
+        
+        # print the parser's summary
+        print(summary)
+        
+        # set the tokens to be the formatted tokens
+        tokens = copy.deepcopy(formatted_tokens)
+        
+        # increment the iterations counter
+        iterations += 1
+    
+    # counter of how many clean runs to do ("reruns" of the code to check for undefined and misc. errors)
+    clean_runs = 1
+    
+    for _ in range(clean_runs):
+        
+        # loop through the tokens
+        for token in tokens:
+            
+            # check if the token is a string
+            if (type(token) == str) and (not token == "$"):
+                
+                # assume the token is an undefined variable
+                putf_line(f"PFSE: undefined token >> \"{token}\" <<")
+                
+                # update error count
+                total_errors += 1
+            else:
+                # skip if it is a numerical value
+                continue
+                
+    
+    # error message
+    if error: putf_line("PTP: error occured")
+
+    # program summary message
+    if DEBUG:
+        putf_line(f"PPPS: executed in {iterations} iteration(s)")
+        putf_line(f"PPPS: executed with {total_errors} error(s)")
+
+# determines the color of a given message
 def color_message(message : str):
     # split the message into tokens
     tokens = message.split(" ")
@@ -403,15 +424,14 @@ def color_message(message : str):
     for token in tokens:
         color = (255, 255, 255) # default to white
         
+        for parser_item in enumerate(parser.keywords):
+            if token == parser_item[1] or token == parser_item[1] + ":":
+                color = parser.colorkey[parser_item[0]]
+        
         for program in programs:
             if token == program.name:
-                color = (230, 79, 48) # redish magenta
-        
-        """
-        for function in push_programs:
-            if token == function.name:
-                color = (39, 152, 152) # dark aqua
-        """
+                #color = (230, 79, 48) # reddish magenta
+                color = (197, 134, 192) # more pinkish
         
         if token == ";":
             color = (127, 127, 127) # medium gray
