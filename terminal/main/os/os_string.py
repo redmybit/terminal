@@ -9,12 +9,21 @@ def execute(tokens, token, stack):
     next = ""
     index = 0
     final = ""
-    while next != ";":
+    while next != ";" and error is None:
         index += 1
-        next = tokens[token[0] + index]
         
-        final += " " + str(next)
-    
+        # error handling
+        if len(tokens) - 1 > token[0] + index: # goofy if statement
+            error = "parameter not given"
+        else:
+            next = tokens[token[0] + index]
+            
+            final += " " + str(next)
+        
+        # prevents the while loop from infinitely incurring
+        if index >= 101:
+            error = "max string depth reached"
+            
     # format the string (remove the unneccessary spaces at the front & at the end)
     final = final[:-2]
     final = final[1:]

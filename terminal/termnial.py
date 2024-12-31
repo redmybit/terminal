@@ -15,28 +15,6 @@ import copy
 # SFE: Stack found error
 # SFSE: Stack found soft error
 
-# parser class
-class Parser:
-    def __init__(self) -> None:
-        self.keywords = [
-            "PFE",
-            "PFSE",
-            "PTP",
-            "PS",
-            "PPPS"
-        ]
-        
-        self.colorkey = [
-            (255, 0, 0),
-            (255, 0, 0),
-            (76, 197, 170),
-            (76, 197, 170),
-            (76, 197, 170)
-        ]
-
-# general parser
-parser = Parser()
-
 # initilize pygame
 pygame.init()
 
@@ -170,6 +148,7 @@ class Variable:
 class Stack:
     def __init__(self) -> None:
         self.memory = []
+        self.errors = 0
     
     def add(self, variable):
         self.memory.append(variable)
@@ -185,12 +164,12 @@ class Stack:
             self.memory[index] = Variable(name, new_value, index)
             return index
         else: 
-            putf_line("SFE: variable not defined")
+            self.log_error("SFE: variable not defined")
             return None
     
     def geti(self, index):
         if index > len(self.memory):
-            putf_line("SFE: index out of range")
+            self.log_error("SFE: index out of range")
             return None
 
         return self.memory[index]
@@ -203,11 +182,25 @@ class Stack:
         if name in names:
             return self.geti(names.index(name))
         else: 
-            putf_line("SFE: variable not defined")
+            self.log_error("SFE: variable not defined")
             return None
     
     def gets(self):
         return len(self.memory)
+    
+    def gete(self):
+        
+        # reset and return the errors the stack has logged
+        errors = self.errors
+        self.errors = 0
+        
+        return errors
+
+    def log_error(self, error):
+        putf_line(error)
+        
+        # increment the errors counter
+        self.errors += 1
 
 
 # main stack
@@ -263,6 +256,78 @@ programs = [
     STRING, # handles the string data type
     ECHO,
 ]
+
+# list of the program keywords derived from the previously defined programs
+program_keywords = [program.name for program in programs]
+
+# color key for the aforementioned keywrods
+program_colorkey = [(197, 134, 192) for _ in enumerate(programs)]
+
+# color theme class
+class Colortheme:
+    def __init__(self, name, theme) -> None:
+        self.name = name
+        self.theme = theme
+
+# child theme class
+class Theme:
+    def __init__(self, keywords, colorkey) -> None:
+        self.keywords = keywords
+        
+        self.colorkey = colorkey
+
+# general color theme code
+TERMINAL_KEYWORDS = [
+    
+    # parser errors
+    "PFE",
+    "PFSE",
+    
+    # general parser
+    "PTP",
+    "PS",
+    "PPPS",
+    
+    # stack errors
+    "SFSE",
+    "SFE",
+    
+    # misc. symbols
+    "$",
+    ";",
+    
+    # program keywords
+    *program_keywords
+]
+
+TERMINAL_COLORKEY = [
+    
+    # parser errors
+    (255, 0, 0),
+    (255, 0, 0),
+    
+    # general parser
+    (76, 197, 170),
+    (76, 197, 170),
+    (76, 197, 170),
+    
+    # stack errors
+    (255, 0, 0),
+    (255, 0, 0),
+    
+    # general stack
+    # (45, 99, 169)
+    
+    # misc. symbols
+    (127, 127, 127),
+    (127, 127, 127),
+    
+    # program keywords
+    *program_colorkey
+]
+
+terminal_color_theme = Theme(TERMINAL_KEYWORDS, TERMINAL_COLORKEY)
+color_theme = Colortheme("Terminal", terminal_color_theme)
 
 # function to execute commands
 def execute_command(command : str):
@@ -419,6 +484,9 @@ def execute_command(command : str):
     # error message
     if error: putf_line("PTP: error occured")
 
+    # update the total with the errors logged from the stack
+    total_errors += stack.gete()
+
     # program summary message
     if DEBUG:
         putf_line(f"PPPS: executed in {iterations} iteration(s)")
@@ -436,10 +504,14 @@ def color_message(message : str):
     for token in tokens:
         color = (255, 255, 255) # default to white
         
-        for parser_item in enumerate(parser.keywords):
+        # checks if the current token is in the color theme, if it is assign it its designated color
+        for parser_item in enumerate(color_theme.theme.keywords):
             if token == parser_item[1] or token == parser_item[1] + ":":
-                color = parser.colorkey[parser_item[0]]
+                color = color_theme.theme.colorkey[parser_item[0]]
         
+        
+        """
+        # programs
         for program in programs:
             if token == program.name:
                 #color = (230, 79, 48) # reddish magenta
@@ -447,8 +519,10 @@ def color_message(message : str):
         
         if token == ";":
             color = (127, 127, 127) # medium gray
+        """
         
         color_key.append(color)
+        
     
     return color_key
 
