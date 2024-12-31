@@ -320,9 +320,10 @@ def execute_command(command : str):
             
             # debug
             # print(str(reversed_token[0]) + ": " + str(reversed_token[1]))
-            
-            using_token = reversed_token[1]
 
+            # using token
+            using_token = reversed_token[1]
+            
             # check if the token is a keyword
             for program in programs:
                 
@@ -337,8 +338,10 @@ def execute_command(command : str):
                     
                     # define a token to be passed as a parameter
                     token = [token_index, reversed_token[1]]
+                    
+                    # debug
                     print(">>>>>>>> tokens " + str(tokens))
-                    print(">>>>>>>> token " + str(token))
+                    print(">>>>>>>> tok tok " + str(token))
                     
                     # execute the program
                     new_token, skip, error_message, soft_error_message, console_output = program.execute(tokens, token, stack)
@@ -365,14 +368,23 @@ def execute_command(command : str):
                     if new_token is not None:
                         summary = "PS: " + str(token[1]) + " => " + str(new_token)
                         using_token = new_token
+                    else:
+                        using_token = "$"
+                    
+                    # loop through the parameters and identify them as "$"
+                    if skip > 0:
+                        for parameter in range(1, skip + 1):
+                            print("NOTICE: " + str(formatted_tokens))
+                            formatted_tokens[token_index - parameter] = "$"
+                            print("NOTICE: " + str(formatted_tokens))
                     
                     # break on errors
                     if error: break
                 if error: break
             if error: break
-            
-            # add the token to the end of the code
-            if (processing == False) and (using_token is not None): formatted_tokens.append(using_token)
+
+            # format the formatted tokens list
+            if not using_token == "$": formatted_tokens.append(using_token)
         
         # print the parser's summary
         print(summary)
