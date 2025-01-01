@@ -201,6 +201,9 @@ class Stack:
         
         # increment the errors counter
         self.errors += 1
+    
+    def getnp(self):
+        return PATH
 
 
 # main stack
@@ -244,10 +247,11 @@ GET = Program("get", load_module("os_get"))
 INTEGER = Program("integer", load_module("os_integer"))
 FLOAT = Program("float", load_module("os_float"))
 EVAL = Program("eval", load_module("os_eval"))
+FILE = Program("file", load_module("os_file"))
 
 update_path("terminal\\main") # correct the path back to main
 
-# list of all the programs NOTE: ORDER IS IMPORTANT
+# list of all the programs
 programs = [
     GET, # gets variables
     INTEGER, # integer data type
@@ -255,6 +259,7 @@ programs = [
     EVAL, # evalutates expressions
     STRING, # handles the string data type
     ECHO,
+    FILE,
 ]
 
 # list of the program keywords derived from the previously defined programs
@@ -295,6 +300,7 @@ TERMINAL_KEYWORDS = [
     # misc. symbols
     "$",
     ";",
+    "*",
     
     # program keywords
     *program_keywords
@@ -319,6 +325,7 @@ TERMINAL_COLORKEY = [
     # (45, 99, 169)
     
     # misc. symbols
+    (127, 127, 127),
     (127, 127, 127),
     (127, 127, 127),
     
@@ -445,10 +452,10 @@ def execute_command(command : str):
                     
                     # loop through the parameters and identify them as "$"
                     if skip > 0:
-                        for parameter in range(1 - offset, skip + 1):
-                            print("NOTICE: " + str(formatted_tokens))
+                        for parameter in range(offset, skip + 1):
+                            print("NOTICE: " + str(formatted_tokens) + " INDEX: " + str(token_index - parameter))
                             formatted_tokens[token_index - parameter] = "$"
-                            print("NOTICE: " + str(formatted_tokens))
+                            print("NOTICE: " + str(formatted_tokens) + " INDEX: " + str(token_index - parameter))
                     
                     # break on errors
                     if error: break

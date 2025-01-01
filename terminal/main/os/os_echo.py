@@ -5,7 +5,7 @@ def execute(tokens, token, stack):
     console_output = None
     skip = 1
     
-    if len(tokens) - 1 > token[0] + 1: # goofy if statement
+    if len(tokens) - 1 > token[0] + skip: # goofy if statement
         error = "parameter not given"
     else:
         printing = str(tokens[token[0] + 1])
