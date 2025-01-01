@@ -282,9 +282,9 @@ TERMINAL_KEYWORDS = [
     # parser errors
     "PFE",
     "PFSE",
+    "PTP",
     
     # general parser
-    "PTP",
     "PS",
     "PPPS",
     
@@ -305,9 +305,9 @@ TERMINAL_COLORKEY = [
     # parser errors
     (255, 0, 0),
     (255, 0, 0),
+    (255, 0, 0),
     
     # general parser
-    (76, 197, 170),
     (76, 197, 170),
     (76, 197, 170),
     
@@ -368,6 +368,9 @@ def execute_command(command : str):
         # summary of changes
         summary = "Parser summary: none"
         
+        # skip variable
+        skip = 0
+        
         # debug
         print("tokens: " + str(tokens))
         
@@ -405,8 +408,8 @@ def execute_command(command : str):
                     token = [token_index, reversed_token[1]]
                     
                     # debug
-                    print(">>>>>>>> tokens " + str(tokens))
-                    print(">>>>>>>> tok tok " + str(token))
+                    print(">>>>>>>> tokens : " + str(tokens))
+                    print(">>>>>>>> single : " + str(token))
                     
                     # execute the program
                     new_token, skip, error_message, soft_error_message, console_output = program.execute(tokens, token, stack)
@@ -430,7 +433,11 @@ def execute_command(command : str):
                         putf_line(console_output)
             
                     # update the parser summary and add the update the formatted tokens list
+                    offset = 0
+                    
                     if new_token is not None:
+                        offset = 1
+                        
                         summary = "PS: " + str(token[1]) + " => " + str(new_token)
                         using_token = new_token
                     else:
@@ -438,7 +445,7 @@ def execute_command(command : str):
                     
                     # loop through the parameters and identify them as "$"
                     if skip > 0:
-                        for parameter in range(1, skip + 1):
+                        for parameter in range(1 - offset, skip + 1):
                             print("NOTICE: " + str(formatted_tokens))
                             formatted_tokens[token_index - parameter] = "$"
                             print("NOTICE: " + str(formatted_tokens))
@@ -450,6 +457,9 @@ def execute_command(command : str):
 
             # format the formatted tokens list
             if not using_token == "$": formatted_tokens.append(using_token)
+            
+            # loop through formatted tokens and remove the "$" symbols
+            for _ in range(formatted_tokens.count("$")): formatted_tokens.remove("$")
         
         # print the parser's summary
         print(summary)
@@ -509,21 +519,8 @@ def color_message(message : str):
             if token == parser_item[1] or token == parser_item[1] + ":":
                 color = color_theme.theme.colorkey[parser_item[0]]
         
-        
-        """
-        # programs
-        for program in programs:
-            if token == program.name:
-                #color = (230, 79, 48) # reddish magenta
-                color = (197, 134, 192) # more pinkish
-        
-        if token == ";":
-            color = (127, 127, 127) # medium gray
-        """
-        
         color_key.append(color)
         
-    
     return color_key
 
 # main function

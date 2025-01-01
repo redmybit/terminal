@@ -2,6 +2,7 @@ def execute(tokens, token, stack):
     error = None
     soft_error = None
     new_token = None
+    console_output = None
     skip = 1
     
     if len(tokens) - 1 > token[0] + 1: # goofy if statement

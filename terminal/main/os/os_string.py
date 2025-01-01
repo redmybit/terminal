@@ -12,13 +12,9 @@ def execute(tokens, token, stack):
     while next != ";" and error is None:
         index += 1
         
-        # error handling
-        if len(tokens) - 1 > token[0] + index: # goofy if statement
-            error = "parameter not given"
-        else:
-            next = tokens[token[0] + index]
-            
-            final += " " + str(next)
+        next = tokens[token[0] + index]
+        
+        final += " " + str(next)
         
         # prevents the while loop from infinitely incurring
         if index >= 101:
