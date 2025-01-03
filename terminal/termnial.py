@@ -375,8 +375,8 @@ def execute_command(command : str):
         # summary of changes
         summary = "Parser summary: none"
         
-        # skip variable
-        skip = 0
+        # list of parameters
+        parameters = [False for _ in enumerate(tokens)]
         
         # debug
         print("tokens: " + str(tokens))
@@ -450,12 +450,12 @@ def execute_command(command : str):
                     else:
                         using_token = "$"
                     
-                    # loop through the parameters and identify them as "$"
-                    if skip > 0:
-                        for parameter in range(offset, skip + 1):
-                            print("NOTICE: " + str(formatted_tokens) + " INDEX: " + str(token_index - parameter))
-                            formatted_tokens[token_index - parameter] = "$"
-                            print("NOTICE: " + str(formatted_tokens) + " INDEX: " + str(token_index - parameter))
+                    # loop through the parameters and mark them
+                    print("NOTICE: " + str(reversed_tokens))
+                    for index in range(skip):
+                        print("AT: " + str(reversed_token[0] - 1))
+                        parameters[reversed_token[0] - 1 - index] = True # is a parameter
+                    print("NOTICE: " + str(parameters))
                     
                     # break on errors
                     if error: break
@@ -463,7 +463,7 @@ def execute_command(command : str):
             if error: break
 
             # format the formatted tokens list
-            if not using_token == "$": formatted_tokens.append(using_token)
+            if not using_token == "$" and not parameters[reversed_token[0]]: formatted_tokens.append(using_token)
             
             # loop through formatted tokens and remove the "$" symbols
             for _ in range(formatted_tokens.count("$")): formatted_tokens.remove("$")
